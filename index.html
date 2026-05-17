@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1週間こんだてノート</title>
+  <meta name="theme-color" content="#315c4d">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">1週間の献立と買い物を管理</p>
+        <h1>1週間こんだてノート</h1>
+      </div>
+      <button id="settings-btn" class="icon-btn" aria-label="予算設定">⚙</button>
+    </header>
+
+    <main>
+      <nav class="tabs primary-tabs" aria-label="大きな機能切替">
+        <button class="tab active" data-view="meals">献立ノート</button>
+        <button class="tab" data-view="budget">予算管理</button>
+      </nav>
+
+      <section id="view-meals" class="view active">
+        <div class="note-guide">
+          <p>1週間の献立を登録して、必要な食材を買い物リストに追加できます。</p>
+        </div>
+
+        <section class="note-section">
+          <div class="section-head">
+            <h2>週間献立</h2>
+            <div class="week-nav">
+              <button id="prev-week-btn" class="icon-btn small" aria-label="前の週">‹</button>
+              <strong id="current-week-label"></strong>
+              <button id="next-week-btn" class="icon-btn small" aria-label="次の週">›</button>
+            </div>
+            <button id="edit-meals-btn" class="secondary-btn">まとめて編集</button>
+          </div>
+          <button id="this-week-btn" class="link-btn hidden">今週に戻る</button>
+          <div id="empty-meal-state" class="empty-state">
+            <div class="empty-icon">🍳</div>
+            <p>まだ献立が登録されていません</p>
+            <button id="add-first-meal-btn" class="primary-btn">献立を追加する</button>
+          </div>
+          <div id="meal-list" class="meal-list"></div>
+        </section>
+
+        <section class="note-section">
+          <div class="section-head">
+            <h2>買い物リスト</h2>
+            <span id="shopping-total" class="soft-pill"></span>
+          </div>
+          <form id="shopping-form" class="inline-form shopping-simple-form">
+            <input id="shopping-name" type="text" placeholder="例：牛乳">
+            <button class="primary-btn">追加</button>
+          </form>
+          <ul id="shopping-list" class="shopping-list"></ul>
+        </section>
+      </section>
+
+      <section id="view-budget" class="view">
+        <section class="balance-panel">
+          <div class="month-row">
+            <button id="prev-month-btn" class="icon-btn" aria-label="前の月">‹</button>
+            <strong id="current-month-label"></strong>
+            <button id="next-month-btn" class="icon-btn" aria-label="次の月">›</button>
+          </div>
+
+          <div id="budget-empty" class="empty-callout">
+            <p>今月の予算を入力すると、あといくら使えるか確認できます。</p>
+            <button id="start-budget-btn" class="primary-btn">予算を設定</button>
+          </div>
+
+          <div id="budget-summary" class="summary-grid">
+            <div class="main-number">
+              <span>今月あと</span>
+              <strong id="remaining-total">¥0</strong>
+            </div>
+            <div class="metric">
+              <span>使った金額</span>
+              <strong id="spent-total">¥0</strong>
+            </div>
+            <div class="metric">
+              <span>1日目安</span>
+              <strong id="daily-pace">¥0</strong>
+            </div>
+            <div class="meter" aria-label="予算の使用率">
+              <div id="budget-meter"></div>
+            </div>
+            <p id="pace-message" class="pace-message"></p>
+          </div>
+        </section>
+
+        <div class="quick-actions">
+          <button id="open-expense-btn" class="primary-btn">支出を入力</button>
+          <button id="open-budget-btn" class="secondary-btn">予算を編集</button>
+        </div>
+
+        <div class="card">
+          <h2>カテゴリ別</h2>
+          <div id="category-list" class="category-list"></div>
+        </div>
+
+        <div class="card history-card">
+          <div class="section-head">
+            <h2>支出履歴</h2>
+          </div>
+          <ul id="expense-list" class="expense-list"></ul>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="modal-backdrop" class="modal-backdrop hidden"></div>
+
+  <dialog id="budget-dialog" class="dialog">
+    <form method="dialog" id="budget-form">
+      <h2>今月の予算</h2>
+      <label>全体予算<input id="budget-all" type="number" inputmode="numeric"></label>
+      <label>食費<input id="budget-food" type="number" inputmode="numeric"></label>
+      <label>日用品<input id="budget-daily" type="number" inputmode="numeric"></label>
+      <label>その他<input id="budget-other" type="number" inputmode="numeric"></label>
+      <div class="dialog-actions">
+        <button type="button" class="secondary-btn" data-close-dialog="budget-dialog">キャンセル</button>
+        <button id="save-budget-btn" value="default" class="primary-btn">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="expense-dialog" class="dialog">
+    <form method="dialog" id="expense-form">
+      <h2>支出を入力</h2>
+      <label>金額<input id="expense-amount" type="number" inputmode="numeric" required></label>
+      <label>カテゴリ
+        <select id="expense-category">
+          <option value="food">食費</option>
+          <option value="daily">日用品</option>
+          <option value="other">その他</option>
+        </select>
+      </label>
+      <label>日付<input id="expense-date" type="date" required></label>
+      <div class="dialog-actions">
+        <button type="button" class="secondary-btn" data-close-dialog="expense-dialog">キャンセル</button>
+        <button id="save-expense-btn" value="default" class="primary-btn">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="meal-dialog" class="dialog wide-dialog">
+    <form method="dialog" id="meal-form">
+      <h2>献立の入力</h2>
+      <div id="meal-inputs" class="meal-inputs"></div>
+      <div class="dialog-actions">
+        <button type="button" class="secondary-btn" data-close-dialog="meal-dialog">キャンセル</button>
+        <button id="save-meals-btn" value="default" class="primary-btn">まとめて保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>

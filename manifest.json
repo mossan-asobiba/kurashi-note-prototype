@@ -1,0 +1,10 @@
+{
+  "name": "1週間こんだてノート",
+  "short_name": "こんだてノート",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#fbfaf4",
+  "theme_color": "#315c4d",
+  "lang": "ja",
+  "icons": []
+}
