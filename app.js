@@ -1,5 +1,5 @@
 const STORAGE_KEY = "kurashiNotePrototype:v1";
-const MIGRATION_KEY = "kurashiNotePrototype:migratedFromLegacy:v1";
+const MIGRATION_KEY = "kurashiNotePrototype:migratedFromLegacy:v2";
 const days = ["月", "火", "水", "木", "金", "土", "日"];
 const categories = {
   food: { label: "食費", icon: "🍙" },
@@ -85,6 +85,55 @@ function defaultWeekData() {
   };
 }
 
+function createId(prefix = "item") {
+  const randomPart =
+    globalThis.crypto?.randomUUID?.() ||
+    `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `${prefix}-${randomPart}`;
+}
+
+function normalizeMonthData(month) {
+  const source = month && typeof month === "object" ? month : {};
+  return {
+    budgets: {
+      all: Number(source.budgets?.all) || 0,
+      food: Number(source.budgets?.food) || 0,
+      daily: Number(source.budgets?.daily) || 0,
+      other: Number(source.budgets?.other) || 0
+    },
+    expenses: Array.isArray(source.expenses) ? source.expenses : []
+  };
+}
+
+function normalizeWeekData(week) {
+  const source = week && typeof week === "object" ? week : {};
+  return {
+    meals: source.meals && typeof source.meals === "object" ? source.meals : {},
+    shopping: Array.isArray(source.shopping) ? source.shopping : []
+  };
+}
+
+function ensureStateShape(targetState) {
+  targetState.currentMonth = targetState.currentMonth || new Date().toISOString();
+  targetState.currentWeek = targetState.currentWeek || new Date().toISOString();
+  targetState.months = targetState.months && typeof targetState.months === "object" ? targetState.months : {};
+  targetState.weeks = targetState.weeks && typeof targetState.weeks === "object" ? targetState.weeks : {};
+
+  Object.keys(targetState.months).forEach((key) => {
+    targetState.months[key] = normalizeMonthData(targetState.months[key]);
+  });
+
+  Object.keys(targetState.weeks).forEach((key) => {
+    targetState.weeks[key] = normalizeWeekData(targetState.weeks[key]);
+  });
+
+  const currentMonth = monthKey(targetState.currentMonth);
+  const currentWeek = weekKey(targetState.currentWeek);
+  if (!targetState.months[currentMonth]) targetState.months[currentMonth] = defaultMonthData();
+  if (!targetState.weeks[currentWeek]) targetState.weeks[currentWeek] = defaultWeekData();
+  return targetState;
+}
+
 function createInitialState() {
   return {
     currentMonth: new Date().toISOString(),
@@ -99,14 +148,13 @@ function loadState() {
   if (!saved) {
     const initialState = createInitialState();
     migrateLegacyData(initialState);
-    return initialState;
+    return ensureStateShape(initialState);
   }
 
   try {
     const parsed = JSON.parse(saved);
     if (!parsed.months) throw new Error("Invalid data");
-    if (!parsed.weeks) parsed.weeks = {};
-    if (!parsed.currentWeek) parsed.currentWeek = new Date().toISOString();
+    ensureStateShape(parsed);
 
     Object.entries(parsed.months).forEach(([key, month]) => {
       if (month.meals || month.shopping) {
@@ -119,14 +167,12 @@ function loadState() {
       }
     });
 
-    const currentWeek = weekKey(parsed.currentWeek);
-    if (!parsed.weeks[currentWeek]) parsed.weeks[currentWeek] = defaultWeekData();
     migrateLegacyData(parsed);
-    return parsed;
+    return ensureStateShape(parsed);
   } catch {
     const initialState = createInitialState();
     migrateLegacyData(initialState);
-    return initialState;
+    return ensureStateShape(initialState);
   }
 }
 
@@ -139,16 +185,19 @@ function migrateLegacyData(targetState) {
     const konda = JSON.parse(localStorage.getItem("kondaNoteAppData") || "null");
     if (konda?.weeks) {
       Object.entries(konda.weeks).forEach(([key, week]) => {
-        const targetWeek = targetState.weeks[key] || defaultWeekData();
-        targetWeek.meals = { ...targetWeek.meals, ...(week.menus || {}) };
+        const targetWeek = normalizeWeekData(targetState.weeks[key] || defaultWeekData());
+        const legacyMeals = week.menus || week.meals || {};
+        const legacyItems = week.items || week.shopping || [];
+        const existingIds = new Set(targetWeek.shopping.map((item) => item.id));
+        targetWeek.meals = { ...targetWeek.meals, ...legacyMeals };
         targetWeek.shopping = [
           ...targetWeek.shopping,
-          ...(week.items || []).map((item) => ({
-            id: `konda-${item.id || crypto.randomUUID()}`,
+          ...legacyItems.map((item) => ({
+            id: item.id ? `konda-${item.id}` : createId("konda"),
             name: item.name,
-            day: item.menuDay || "",
-            done: Boolean(item.checked)
-          })).filter((item) => item.name)
+            day: item.menuDay || item.day || "",
+            done: Boolean(item.checked ?? item.done)
+          })).filter((item) => item.name && !existingIds.has(item.id))
         ];
         targetState.weeks[key] = targetWeek;
       });
@@ -165,7 +214,7 @@ function migrateLegacyData(targetState) {
     if (legacyBudgets && Object.keys(legacyBudgets).length > 0) {
       const monthBudgets = legacyBudgets.all !== undefined ? { [monthKey(new Date())]: legacyBudgets } : legacyBudgets;
       Object.entries(monthBudgets).forEach(([key, budget]) => {
-        const targetMonth = targetState.months[key] || defaultMonthData();
+        const targetMonth = normalizeMonthData(targetState.months[key] || defaultMonthData());
         targetMonth.budgets = {
           all: Number(budget.all) || 0,
           food: Number(budget.food) || 0,
@@ -181,9 +230,11 @@ function migrateLegacyData(targetState) {
       legacyExpenses.forEach((expense) => {
         if (!expense.date || !expense.amount) return;
         const key = expense.date.slice(0, 7);
-        const targetMonth = targetState.months[key] || defaultMonthData();
+        const targetMonth = normalizeMonthData(targetState.months[key] || defaultMonthData());
+        const expenseId = expense.id ? `left-${expense.id}` : createId("left");
+        if (targetMonth.expenses.some((item) => item.id === expenseId)) return;
         targetMonth.expenses.push({
-          id: `left-${expense.id || crypto.randomUUID()}`,
+          id: expenseId,
           amount: Number(expense.amount) || 0,
           category: categories[expense.category] ? expense.category : "other",
           date: expense.date,
@@ -210,12 +261,14 @@ function saveState() {
 function currentData() {
   const key = monthKey();
   if (!state.months[key]) state.months[key] = defaultMonthData();
+  state.months[key] = normalizeMonthData(state.months[key]);
   return state.months[key];
 }
 
 function currentWeekData() {
   const key = weekKey();
   if (!state.weeks[key]) state.weeks[key] = defaultWeekData();
+  state.weeks[key] = normalizeWeekData(state.weeks[key]);
   return state.weeks[key];
 }
 
@@ -237,7 +290,8 @@ function totals() {
   const data = currentData();
   const spentByCategory = { food: 0, daily: 0, other: 0 };
   data.expenses.forEach((expense) => {
-    spentByCategory[expense.category] += expense.amount;
+    const category = categories[expense.category] ? expense.category : "other";
+    spentByCategory[category] += Number(expense.amount) || 0;
   });
 
   const spent = Object.values(spentByCategory).reduce((sum, amount) => sum + amount, 0);
@@ -327,7 +381,7 @@ function renderMeals(data) {
         <div class="meal-top">
           <span class="meal-day">${day}曜日</span>
         </div>
-        <div class="meal-name">${meal}</div>
+        <div class="meal-name">${escapeHtml(meal)}</div>
         <form class="meal-tools" data-day="${day}">
           <input type="text" name="name" placeholder="買う食材を追加">
           <button class="secondary-btn">追加</button>
@@ -352,7 +406,7 @@ function renderShopping(data) {
           <input type="checkbox" data-action="toggle-shopping" data-id="${item.id}" ${item.done ? "checked" : ""}>
         <span>
           <span class="item-name">${escapeHtml(item.name)}</span>
-          <span class="item-meta">${item.day ? `${item.day}曜の献立` : "直接追加"}</span>
+          <span class="item-meta">${item.day ? `${escapeHtml(item.day)}曜の献立` : "直接追加"}</span>
         </span>
       </label>
       <div>
@@ -373,7 +427,7 @@ function renderExpenses(data) {
     .map((expense) => `
       <li class="expense-item">
         <div>
-          <strong>${categories[expense.category].icon} ${categories[expense.category].label}</strong>
+          <strong>${(categories[expense.category] || categories.other).icon} ${(categories[expense.category] || categories.other).label}</strong>
           <div class="expense-meta">${expense.date}${expense.memo ? `・${escapeHtml(expense.memo)}` : ""}</div>
         </div>
         <div>
@@ -414,7 +468,7 @@ function openMealDialog() {
 function addShoppingItem(name, day = "") {
   if (!name.trim()) return;
   currentWeekData().shopping.push({
-    id: crypto.randomUUID(),
+    id: createId("shopping"),
     name: name.trim(),
     day,
     done: false
@@ -428,10 +482,10 @@ function addExpense(amount, category, date, memo = "") {
   const numericAmount = Number(amount);
   if (!numericAmount || numericAmount < 0) return;
   currentData().expenses.push({
-    id: crypto.randomUUID(),
+    id: createId("expense"),
     amount: numericAmount,
-    category,
-    date,
+    category: categories[category] ? category : "other",
+    date: date || todayISO(),
     memo
   });
   saveState();
