@@ -130,8 +130,7 @@
         <h3>貼り付け読み込み</h3>
         <p class="settings-help">別のURLで使っていたデータは自動で読めない場合があります。必要なときだけ、旧アプリの保存データを貼り付けて読み込めます。</p>
         <label>こんだてノートのデータ<textarea id="konda-import-text" rows="4" placeholder='{"weeks":{...}}'></textarea></label>
-        <label>あといくらメモの支出データ<textarea id="expenses-import-text" rows="4" placeholder='[{"amount":500,"category":"food","date":"2026-07-11"}]'></textarea></label>
-        <label>あといくらメモの予算データ<textarea id="budgets-import-text" rows="4" placeholder='{"2026-07":{"all":30000,"food":20000,"daily":8000,"other":2000}}'></textarea></label>
+        <label>あといくらメモのデータ<textarea id="left-import-text" rows="5" placeholder='{"howMuchLeftExpenses":[...],"howMuchLeftBudgets":{...}}'></textarea></label>
         <button id="import-pasted-btn" type="button" class="secondary-btn">貼り付けたデータを読み込む</button>
       </section>
 
@@ -186,6 +185,18 @@
       <div class="dialog-actions">
         <button type="button" class="secondary-btn" data-close-dialog="meal-dialog">キャンセル</button>
         <button id="save-meals-btn" value="default" class="primary-btn">まとめて保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="ingredient-dialog" class="dialog">
+    <form method="dialog" id="ingredient-form">
+      <h2>買う食材を追加</h2>
+      <p id="ingredient-meal-name" class="dialog-note"></p>
+      <label>食材名<input id="ingredient-name" type="text" placeholder="例：たまご、牛乳"></label>
+      <div class="dialog-actions">
+        <button type="button" class="secondary-btn" data-close-dialog="ingredient-dialog">キャンセル</button>
+        <button id="save-ingredient-btn" value="default" class="primary-btn">追加</button>
       </div>
     </form>
   </dialog>

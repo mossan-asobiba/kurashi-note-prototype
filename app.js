@@ -14,6 +14,7 @@ const yen = new Intl.NumberFormat("ja-JP", {
 });
 
 let state = loadState();
+let ingredientTargetDay = "";
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -41,7 +42,10 @@ const elements = {
   budgetDialog: $("#budget-dialog"),
   expenseDialog: $("#expense-dialog"),
   mealDialog: $("#meal-dialog"),
-  mealInputs: $("#meal-inputs")
+  mealInputs: $("#meal-inputs"),
+  ingredientDialog: $("#ingredient-dialog"),
+  ingredientMealName: $("#ingredient-meal-name"),
+  ingredientName: $("#ingredient-name")
 };
 
 function monthKey(date = state.currentMonth) {
@@ -391,14 +395,11 @@ function renderMeals(data) {
     const meal = data.meals[day] || "";
     return `
       <article class="meal-card">
-        <div class="meal-top">
+        <div class="meal-row">
           <span class="meal-day">${day}曜日</span>
+          <div class="meal-name">${escapeHtml(meal)}</div>
+          <button class="ingredient-add-btn" data-action="open-ingredient" data-day="${day}" aria-label="${day}曜日の買い物を追加">＋</button>
         </div>
-        <div class="meal-name">${escapeHtml(meal)}</div>
-        <form class="meal-tools" data-day="${day}">
-          <input type="text" name="name" placeholder="買う食材を追加">
-          <button class="secondary-btn">追加</button>
-        </form>
       </article>
     `;
   }).join("");
@@ -413,7 +414,9 @@ function renderShopping(data) {
     return;
   }
 
-  elements.shoppingList.innerHTML = data.shopping.map((item) => `
+  elements.shoppingList.innerHTML = [...data.shopping]
+    .sort((a, b) => Number(a.done) - Number(b.done))
+    .map((item) => `
     <li class="shopping-item ${item.done ? "done" : ""}">
       <label class="item-left">
           <input type="checkbox" data-action="toggle-shopping" data-id="${item.id}" ${item.done ? "checked" : ""}>
@@ -483,6 +486,15 @@ function openMealDialog() {
   elements.mealDialog.showModal();
 }
 
+function openIngredientDialog(day) {
+  const meal = currentWeekData().meals[day] || `${day}曜日`;
+  ingredientTargetDay = day;
+  elements.ingredientMealName.textContent = `${day}曜：${meal}`;
+  elements.ingredientName.value = "";
+  elements.ingredientDialog.showModal();
+  setTimeout(() => elements.ingredientName.focus(), 0);
+}
+
 function addShoppingItem(name, day = "") {
   if (!name.trim()) return;
   currentWeekData().shopping.push({
@@ -527,15 +539,14 @@ function readJsonInput(selector, fallback) {
 function importFromPastedData() {
   try {
     const konda = readJsonInput("#konda-import-text", null);
-    const expenses = readJsonInput("#expenses-import-text", []);
-    const budgets = readJsonInput("#budgets-import-text", {});
-    const pastedValues = [konda, expenses, budgets].filter(Boolean);
+    const left = readJsonInput("#left-import-text", null);
+    const pastedValues = [konda, left].filter(Boolean);
 
     const kondaData = konda?.kondaNoteAppData || pastedValues.find((value) => value?.kondaNoteAppData)?.kondaNoteAppData || konda;
-    const expenseData = Array.isArray(expenses)
-      ? expenses
-      : expenses?.howMuchLeftExpenses || pastedValues.find((value) => Array.isArray(value?.howMuchLeftExpenses))?.howMuchLeftExpenses || [];
-    const budgetData = budgets?.howMuchLeftBudgets || pastedValues.find((value) => value?.howMuchLeftBudgets)?.howMuchLeftBudgets || budgets;
+    const expenseData = Array.isArray(left)
+      ? left
+      : left?.howMuchLeftExpenses || pastedValues.find((value) => Array.isArray(value?.howMuchLeftExpenses))?.howMuchLeftExpenses || [];
+    const budgetData = left?.howMuchLeftBudgets || pastedValues.find((value) => value?.howMuchLeftBudgets)?.howMuchLeftBudgets || {};
 
     if (kondaData?.weeks) localStorage.setItem("kondaNoteAppData", JSON.stringify(kondaData));
     if (Array.isArray(expenseData)) localStorage.setItem("howMuchLeftExpenses", JSON.stringify(expenseData));
@@ -545,8 +556,7 @@ function importFromPastedData() {
 
     importFromLocalStorage();
     $("#konda-import-text").value = "";
-    $("#expenses-import-text").value = "";
-    $("#budgets-import-text").value = "";
+    $("#left-import-text").value = "";
   } catch {
     elements.importResult.textContent = "データの形式を確認してください。JSONとして読み込めませんでした。";
   }
@@ -671,18 +681,16 @@ $("#meal-form").addEventListener("submit", (event) => {
   showToast("献立を保存しました");
 });
 
+$("#ingredient-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  addShoppingItem(elements.ingredientName.value, ingredientTargetDay);
+  elements.ingredientDialog.close();
+});
+
 $("#shopping-form").addEventListener("submit", (event) => {
   event.preventDefault();
   addShoppingItem($("#shopping-name").value);
   $("#shopping-name").value = "";
-});
-
-elements.mealList.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const form = event.target.closest(".meal-tools");
-  if (!form) return;
-  addShoppingItem(form.elements.name.value, form.dataset.day);
-  form.reset();
 });
 
 document.addEventListener("click", (event) => {
@@ -697,6 +705,11 @@ document.addEventListener("click", (event) => {
   const data = currentData();
   const weekData = currentWeekData();
   const { action, id } = button.dataset;
+
+  if (action === "open-ingredient") {
+    openIngredientDialog(button.dataset.day);
+    return;
+  }
 
   if (action === "delete-shopping") {
     weekData.shopping = weekData.shopping.filter((item) => item.id !== id);
@@ -717,6 +730,7 @@ document.addEventListener("change", (event) => {
   if (!checkbox) return;
   const item = currentWeekData().shopping.find((entry) => entry.id === checkbox.dataset.id);
   if (item) item.done = checkbox.checked;
+  currentWeekData().shopping.sort((a, b) => Number(a.done) - Number(b.done));
   saveState();
   render();
 });

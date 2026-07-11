@@ -348,7 +348,7 @@ h3 {
 }
 
 .row-top,
-.meal-top,
+.meal-row,
 .expense-item,
 .shopping-item {
   display: flex;
@@ -381,10 +381,40 @@ h3 {
   border: 1px solid var(--line);
 }
 
+.meal-row {
+  justify-content: flex-start;
+}
+
+.meal-day {
+  display: grid;
+  width: 54px;
+  min-width: 54px;
+  height: 40px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--green-2);
+  color: var(--green);
+}
+
 .meal-name {
-  margin-top: 4px;
+  flex: 1;
+  min-width: 0;
   font-size: 1.08rem;
   font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.ingredient-add-btn {
+  display: inline-grid;
+  width: 38px;
+  min-width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--green-2);
+  color: var(--green);
+  font-size: 1.25rem;
+  font-weight: 900;
 }
 
 .meal-tools {
@@ -502,6 +532,13 @@ h3 {
   color: var(--muted);
   font-size: 0.86rem;
   font-weight: 800;
+}
+
+.dialog-note {
+  color: var(--green);
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.5;
 }
 
 .dialog-actions {
