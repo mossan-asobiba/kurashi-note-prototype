@@ -1,16 +1,19 @@
 :root {
-  --ink: #17211d;
-  --muted: #66736d;
-  --line: #dfe6df;
-  --paper: #fbfaf4;
+  --ink: #2f3337;
+  --muted: #8a9099;
+  --line: #e3e7ee;
+  --paper: #f2f3f7;
   --surface: #ffffff;
-  --green: #315c4d;
-  --green-2: #e4eee7;
-  --mint: #86b39c;
-  --yellow: #f0c95a;
-  --red: #d85c4a;
-  --blue: #577590;
-  --shadow: 0 12px 36px rgba(49, 92, 77, 0.12);
+  --green: #23c7c3;
+  --green-2: #dff8f7;
+  --mint: #23c7c3;
+  --yellow: #e9b949;
+  --red: #f5568a;
+  --blue: #4b7bec;
+  --pink: #f5568a;
+  --coral: #ff6b7a;
+  --shadow: 0 18px 38px rgba(44, 53, 65, 0.1);
+  --sharp-shadow: 0 6px 0 rgba(35, 199, 195, 0.12);
 }
 
 * {
@@ -20,16 +23,32 @@
 body {
   margin: 0;
   background:
-    linear-gradient(180deg, rgba(228, 238, 231, 0.8), rgba(251, 250, 244, 0.2) 240px),
+    radial-gradient(circle at 14% 2%, rgba(245, 86, 138, 0.18) 0 46px, transparent 47px),
+    radial-gradient(circle at 92% 8%, rgba(35, 199, 195, 0.18) 0 58px, transparent 59px),
+    linear-gradient(180deg, #f7f8fb 0, var(--paper) 260px),
     var(--paper);
   color: var(--ink);
-  font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", "Meiryo", system-ui, sans-serif;
   letter-spacing: 0;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, transparent 0 48%, rgba(245, 86, 138, 0.88) 49% 54%, transparent 55%) 88% 92px / 70px 70px no-repeat,
+    linear-gradient(90deg, rgba(245, 86, 138, 0.85) 0 8px, transparent 8px 16px) 92% 34px / 64px 14px no-repeat,
+    radial-gradient(circle, rgba(245, 86, 138, 0.55) 0 4px, transparent 5px) 12% 118px / 22px 22px no-repeat,
+    linear-gradient(90deg, rgba(35, 199, 195, 0.8), rgba(35, 199, 195, 0.8)) 7% 92px / 54px 54px no-repeat;
 }
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -38,23 +57,29 @@ button {
   cursor: pointer;
 }
 
+input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--green);
+}
+
 #app {
   width: min(100%, 520px);
   min-height: 100dvh;
   margin: 0 auto;
-  padding: 18px 16px 28px;
+  padding: 20px 16px 28px;
 }
 
 .app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 2px 18px;
+  padding: 12px 4px 18px;
 }
 
 .eyebrow {
   margin: 0 0 4px;
-  color: var(--green);
+  color: var(--pink);
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -67,12 +92,14 @@ p {
 }
 
 h1 {
-  font-size: 1.48rem;
+  font-size: 1.58rem;
   line-height: 1.2;
+  font-weight: 900;
 }
 
 h2 {
-  font-size: 1.04rem;
+  font-size: 1.08rem;
+  font-weight: 900;
 }
 
 h3 {
@@ -84,17 +111,34 @@ h3 {
   width: 40px;
   height: 40px;
   place-items: center;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--ink);
-  box-shadow: inset 0 0 0 1px var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--green);
+  box-shadow: inset 0 0 0 1px var(--line), var(--sharp-shadow);
 }
 
 .balance-panel {
   padding: 18px;
-  border-radius: 8px;
+  border-radius: 14px;
   background: var(--surface);
   box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.balance-panel::before,
+.note-section::before {
+  content: "";
+  position: absolute;
+  width: 74px;
+  height: 74px;
+  right: -28px;
+  top: -24px;
+  background:
+    linear-gradient(90deg, var(--pink) 0 8px, transparent 8px 16px) 0 0 / 40px 12px no-repeat,
+    var(--green);
+  opacity: 0.95;
+  transform: rotate(0deg);
 }
 
 .month-row {
@@ -115,8 +159,8 @@ h3 {
   display: grid;
   gap: 4px;
   padding: 18px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #315c4d, #577590);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #23c7c3 0%, #2f3337 100%);
   color: white;
 }
 
@@ -137,8 +181,9 @@ h3 {
   display: grid;
   gap: 6px;
   padding: 14px;
-  border-radius: 8px;
-  background: #f5f7f2;
+  border-radius: 12px;
+  background: #f8f9fc;
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 
 .metric strong {
@@ -172,9 +217,9 @@ h3 {
   display: grid;
   gap: 14px;
   padding: 18px;
-  border: 1px dashed var(--green);
-  border-radius: 8px;
-  background: #f6fbf7;
+  border: 2px dashed rgba(35, 199, 195, 0.48);
+  border-radius: 14px;
+  background: var(--green-2);
 }
 
 .tabs {
@@ -183,26 +228,27 @@ h3 {
   z-index: 5;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 4px;
+  gap: 6px;
   margin: 16px 0;
   padding: 4px;
-  border-radius: 8px;
-  background: rgba(49, 92, 77, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 0 0 1px var(--line);
   backdrop-filter: blur(12px);
 }
 
 .tab {
   min-height: 44px;
-  border-radius: 6px;
+  border-radius: 11px;
   background: transparent;
   color: var(--muted);
-  font-weight: 700;
+  font-weight: 900;
 }
 
 .tab.active {
-  background: var(--surface);
-  color: var(--green);
-  box-shadow: 0 4px 14px rgba(49, 92, 77, 0.1);
+  background: var(--green);
+  color: white;
+  box-shadow: 0 8px 18px rgba(35, 199, 195, 0.24);
 }
 
 .primary-tabs {
@@ -235,27 +281,29 @@ h3 {
 .secondary-btn {
   min-height: 42px;
   padding: 0 16px;
-  border-radius: 8px;
-  font-weight: 800;
+  border-radius: 12px;
+  font-weight: 900;
 }
 
 .primary-btn {
-  background: var(--green);
+  background: var(--pink);
   color: white;
+  box-shadow: 0 10px 20px rgba(245, 86, 138, 0.22);
 }
 
 .secondary-btn {
   background: var(--green-2);
   color: var(--green);
+  box-shadow: inset 0 0 0 1px rgba(35, 199, 195, 0.12);
 }
 
 .card,
 .meal-card,
 .shopping-item,
 .expense-item {
-  border-radius: 8px;
+  border-radius: 14px;
   background: var(--surface);
-  box-shadow: 0 6px 18px rgba(49, 92, 77, 0.08);
+  box-shadow: 0 8px 22px rgba(44, 53, 65, 0.08);
 }
 
 .card {
@@ -266,19 +314,31 @@ h3 {
 .note-guide {
   margin-bottom: 14px;
   padding: 14px;
-  border-radius: 8px;
-  background: #eef6ef;
-  color: var(--green);
-  font-weight: 800;
+  border-radius: 14px;
+  background: linear-gradient(90deg, var(--green-2), #fff1f6);
+  color: var(--ink);
+  font-weight: 900;
   line-height: 1.55;
+  box-shadow: inset 0 0 0 1px rgba(35, 199, 195, 0.12);
 }
 
 .note-section {
   margin-bottom: 16px;
   padding: 16px;
-  border-radius: 8px;
+  border-radius: 14px;
   background: var(--surface);
   box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.note-section:nth-of-type(2)::before {
+  left: -28px;
+  right: auto;
+  top: -24px;
+  background:
+    radial-gradient(circle, var(--pink) 0 4px, transparent 5px) 0 0 / 18px 18px,
+    transparent;
 }
 
 .empty-state {
@@ -287,8 +347,8 @@ h3 {
   gap: 12px;
   padding: 34px 18px;
   border: 2px dashed var(--line);
-  border-radius: 8px;
-  background: #fafbf8;
+  border-radius: 14px;
+  background: #fafbff;
   text-align: center;
 }
 
@@ -310,8 +370,8 @@ h3 {
 }
 
 .icon-btn.small {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
 }
 
 .link-btn {
@@ -320,8 +380,8 @@ h3 {
   padding: 0 12px;
   border-radius: 999px;
   background: transparent;
-  color: var(--green);
-  font-weight: 800;
+  color: var(--pink);
+  font-weight: 900;
   box-shadow: inset 0 0 0 1px var(--green-2);
 }
 
@@ -379,6 +439,7 @@ h3 {
   padding: 14px;
   box-shadow: none;
   border: 1px solid var(--line);
+  background: #ffffff;
 }
 
 .meal-row {
@@ -391,7 +452,7 @@ h3 {
   min-width: 54px;
   height: 40px;
   place-items: center;
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--green-2);
   color: var(--green);
 }
@@ -410,11 +471,12 @@ h3 {
   min-width: 38px;
   height: 38px;
   place-items: center;
-  border-radius: 8px;
-  background: var(--green-2);
-  color: var(--green);
+  border-radius: 10px;
+  background: var(--green);
+  color: white;
   font-size: 1.25rem;
   font-weight: 900;
+  box-shadow: 0 8px 16px rgba(35, 199, 195, 0.22);
 }
 
 .meal-tools {
@@ -432,8 +494,18 @@ h3 {
   min-height: 42px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
   background: #fff;
+}
+
+.meal-tools input:focus,
+.inline-form input:focus,
+.dialog input:focus,
+.dialog select:focus,
+.dialog textarea:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(35, 199, 195, 0.14);
 }
 
 .dialog textarea {
@@ -460,10 +532,13 @@ h3 {
 .shopping-item,
 .expense-item {
   padding: 12px;
+  box-shadow: none;
+  border: 1px solid var(--line);
 }
 
 .shopping-item.done {
   opacity: 0.55;
+  background: #f8f9fc;
 }
 
 .shopping-item.done .item-name {
@@ -493,13 +568,15 @@ h3 {
   padding: 5px 9px;
   border-radius: 999px;
   background: var(--green-2);
+  color: var(--green);
+  font-weight: 900;
 }
 
 .delete-btn {
   min-width: 34px;
   height: 34px;
-  border-radius: 50%;
-  background: #f8e7e3;
+  border-radius: 10px;
+  background: #fff0f5;
   color: var(--red);
   font-weight: 900;
 }
@@ -507,9 +584,9 @@ h3 {
 .dialog {
   width: min(calc(100% - 28px), 440px);
   border: 0;
-  border-radius: 8px;
+  border-radius: 16px;
   padding: 0;
-  box-shadow: 0 24px 70px rgba(23, 33, 29, 0.25);
+  box-shadow: 0 24px 70px rgba(47, 51, 55, 0.22);
 }
 
 .wide-dialog {
@@ -517,7 +594,7 @@ h3 {
 }
 
 .dialog::backdrop {
-  background: rgba(23, 33, 29, 0.32);
+  background: rgba(47, 51, 55, 0.32);
 }
 
 .dialog form {
@@ -535,7 +612,7 @@ h3 {
 }
 
 .dialog-note {
-  color: var(--green);
+  color: var(--pink);
   font-size: 0.9rem;
   font-weight: 800;
   line-height: 1.5;
@@ -553,8 +630,8 @@ h3 {
   gap: 10px;
   padding: 14px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fafbf8;
+  border-radius: 14px;
+  background: #fafbff;
 }
 
 .settings-help,
@@ -588,7 +665,7 @@ h3 {
   width: 38px;
   height: 38px;
   place-items: center;
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--green-2);
   color: var(--green);
   font-weight: 900;

@@ -3,8 +3,8 @@
   "short_name": "くらしノート",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#fbfaf4",
-  "theme_color": "#315c4d",
+  "background_color": "#f2f3f7",
+  "theme_color": "#23c7c3",
   "lang": "ja",
   "icons": [
     {
