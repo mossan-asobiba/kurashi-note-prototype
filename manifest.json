@@ -1,6 +1,6 @@
 {
-  "name": "1週間こんだてノート",
-  "short_name": "こんだてノート",
+  "name": "くらしノート",
+  "short_name": "くらしノート",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#fbfaf4",
