@@ -61,6 +61,7 @@ button {
 
 h1,
 h2,
+h3,
 p {
   margin: 0;
 }
@@ -72,6 +73,10 @@ h1 {
 
 h2 {
   font-size: 1.04rem;
+}
+
+h3 {
+  font-size: 0.94rem;
 }
 
 .icon-btn {
@@ -391,13 +396,21 @@ h2 {
 .meal-tools input,
 .inline-form input,
 .dialog input,
-.dialog select {
+.dialog select,
+.dialog textarea {
   width: 100%;
   min-height: 42px;
   padding: 0 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fff;
+}
+
+.dialog textarea {
+  min-height: 92px;
+  padding-block: 10px;
+  resize: vertical;
+  line-height: 1.5;
 }
 
 .meal-tools input {
@@ -496,6 +509,28 @@ h2 {
   gap: 10px;
   justify-content: flex-end;
   margin-top: 6px;
+}
+
+.settings-block {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fafbf8;
+}
+
+.settings-help,
+.settings-result {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.settings-result {
+  min-height: 1.3em;
+  color: var(--green);
+  font-weight: 800;
 }
 
 .meal-inputs {

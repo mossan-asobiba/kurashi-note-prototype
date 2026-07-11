@@ -15,7 +15,7 @@
         <p class="eyebrow">1週間の献立と買い物を管理</p>
         <h1>1週間こんだてノート</h1>
       </div>
-      <button id="settings-btn" class="icon-btn" aria-label="予算設定">⚙</button>
+      <button id="settings-btn" class="icon-btn" aria-label="設定">⚙</button>
     </header>
 
     <main>
@@ -115,6 +115,36 @@
   </div>
 
   <div id="modal-backdrop" class="modal-backdrop hidden"></div>
+
+  <dialog id="settings-dialog" class="dialog wide-dialog">
+    <form method="dialog" id="settings-form">
+      <h2>設定</h2>
+      <section class="settings-block">
+        <h3>データ読み込み</h3>
+        <p class="settings-help">同じブラウザに残っている「こんだてノート」と「あといくらメモ」のデータを読み込みます。</p>
+        <button id="import-legacy-btn" type="button" class="primary-btn">旧アプリのデータを読み込む</button>
+        <p id="import-result" class="settings-result"></p>
+      </section>
+
+      <section class="settings-block">
+        <h3>貼り付け読み込み</h3>
+        <p class="settings-help">別のURLで使っていたデータは自動で読めない場合があります。必要なときだけ、旧アプリの保存データを貼り付けて読み込めます。</p>
+        <label>こんだてノートのデータ<textarea id="konda-import-text" rows="4" placeholder='{"weeks":{...}}'></textarea></label>
+        <label>あといくらメモの支出データ<textarea id="expenses-import-text" rows="4" placeholder='[{"amount":500,"category":"food","date":"2026-07-11"}]'></textarea></label>
+        <label>あといくらメモの予算データ<textarea id="budgets-import-text" rows="4" placeholder='{"2026-07":{"all":30000,"food":20000,"daily":8000,"other":2000}}'></textarea></label>
+        <button id="import-pasted-btn" type="button" class="secondary-btn">貼り付けたデータを読み込む</button>
+      </section>
+
+      <section class="settings-block">
+        <h3>予算</h3>
+        <button id="settings-budget-btn" type="button" class="secondary-btn">予算を設定・編集</button>
+      </section>
+
+      <div class="dialog-actions">
+        <button type="button" class="secondary-btn" data-close-dialog="settings-dialog">閉じる</button>
+      </div>
+    </form>
+  </dialog>
 
   <dialog id="budget-dialog" class="dialog">
     <form method="dialog" id="budget-form">

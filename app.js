@@ -36,6 +36,8 @@ const elements = {
   shoppingTotal: $("#shopping-total"),
   expenseList: $("#expense-list"),
   toast: $("#toast"),
+  settingsDialog: $("#settings-dialog"),
+  importResult: $("#import-result"),
   budgetDialog: $("#budget-dialog"),
   expenseDialog: $("#expense-dialog"),
   mealDialog: $("#meal-dialog"),
@@ -176,10 +178,13 @@ function loadState() {
   }
 }
 
-function migrateLegacyData(targetState) {
-  if (localStorage.getItem(MIGRATION_KEY)) return;
+function migrateLegacyData(targetState, options = {}) {
+  if (localStorage.getItem(MIGRATION_KEY) && !options.force) {
+    return { meals: 0, shopping: 0, budgets: 0, expenses: 0 };
+  }
 
   let imported = false;
+  const counts = { meals: 0, shopping: 0, budgets: 0, expenses: 0 };
 
   try {
     const konda = JSON.parse(localStorage.getItem("kondaNoteAppData") || "null");
@@ -189,6 +194,8 @@ function migrateLegacyData(targetState) {
         const legacyMeals = week.menus || week.meals || {};
         const legacyItems = week.items || week.shopping || [];
         const existingIds = new Set(targetWeek.shopping.map((item) => item.id));
+        const beforeMealCount = Object.keys(targetWeek.meals).length;
+        const beforeShoppingCount = targetWeek.shopping.length;
         targetWeek.meals = { ...targetWeek.meals, ...legacyMeals };
         targetWeek.shopping = [
           ...targetWeek.shopping,
@@ -199,6 +206,8 @@ function migrateLegacyData(targetState) {
             done: Boolean(item.checked ?? item.done)
           })).filter((item) => item.name && !existingIds.has(item.id))
         ];
+        counts.meals += Math.max(0, Object.keys(targetWeek.meals).length - beforeMealCount);
+        counts.shopping += Math.max(0, targetWeek.shopping.length - beforeShoppingCount);
         targetState.weeks[key] = targetWeek;
       });
       imported = true;
@@ -222,6 +231,7 @@ function migrateLegacyData(targetState) {
           other: Number(budget.other) || 0
         };
         targetState.months[key] = targetMonth;
+        counts.budgets += 1;
       });
       imported = true;
     }
@@ -241,6 +251,7 @@ function migrateLegacyData(targetState) {
           memo: ""
         });
         targetState.months[key] = targetMonth;
+        counts.expenses += 1;
       });
       imported = true;
     }
@@ -252,6 +263,8 @@ function migrateLegacyData(targetState) {
     localStorage.setItem(MIGRATION_KEY, "true");
     localStorage.setItem(STORAGE_KEY, JSON.stringify(targetState));
   }
+
+  return counts;
 }
 
 function saveState() {
@@ -447,6 +460,11 @@ function openBudgetDialog() {
   elements.budgetDialog.showModal();
 }
 
+function openSettingsDialog() {
+  elements.importResult.textContent = "";
+  elements.settingsDialog.showModal();
+}
+
 function openExpenseDialog(category = "food", amount = "") {
   $("#expense-amount").value = amount;
   $("#expense-category").value = category;
@@ -492,6 +510,52 @@ function addExpense(amount, category, date, memo = "") {
   render();
 }
 
+function importFromLocalStorage() {
+  const counts = migrateLegacyData(state, { force: true });
+  state = ensureStateShape(state);
+  saveState();
+  render();
+  showImportResult(counts);
+}
+
+function readJsonInput(selector, fallback) {
+  const value = $(selector).value.trim();
+  if (!value) return fallback;
+  return JSON.parse(value);
+}
+
+function importFromPastedData() {
+  try {
+    const konda = readJsonInput("#konda-import-text", null);
+    const expenses = readJsonInput("#expenses-import-text", []);
+    const budgets = readJsonInput("#budgets-import-text", {});
+
+    if (konda) localStorage.setItem("kondaNoteAppData", JSON.stringify(konda));
+    if (Array.isArray(expenses)) localStorage.setItem("howMuchLeftExpenses", JSON.stringify(expenses));
+    if (budgets && typeof budgets === "object") localStorage.setItem("howMuchLeftBudgets", JSON.stringify(budgets));
+
+    importFromLocalStorage();
+    $("#konda-import-text").value = "";
+    $("#expenses-import-text").value = "";
+    $("#budgets-import-text").value = "";
+  } catch {
+    elements.importResult.textContent = "データの形式を確認してください。JSONとして読み込めませんでした。";
+  }
+}
+
+function showImportResult(counts) {
+  const total = counts.meals + counts.shopping + counts.budgets + counts.expenses;
+  if (total === 0) {
+    elements.importResult.textContent = "読み込める旧データが見つかりませんでした。別のURLで使っていた場合は、貼り付け読み込みを使ってください。";
+    showToast("読み込めるデータがありませんでした");
+    return;
+  }
+
+  elements.importResult.textContent =
+    `読み込み完了：献立${counts.meals}件、買い物${counts.shopping}件、予算${counts.budgets}か月、支出${counts.expenses}件`;
+  showToast("旧データを読み込みました");
+}
+
 function showToast(message) {
   elements.toast.textContent = message;
   elements.toast.classList.add("show");
@@ -512,9 +576,15 @@ function escapeAttr(text) {
   return escapeHtml(text).replace(/`/g, "&#096;");
 }
 
-$("#settings-btn").addEventListener("click", openBudgetDialog);
+$("#settings-btn").addEventListener("click", openSettingsDialog);
 $("#start-budget-btn").addEventListener("click", openBudgetDialog);
 $("#open-budget-btn").addEventListener("click", openBudgetDialog);
+$("#settings-budget-btn").addEventListener("click", () => {
+  elements.settingsDialog.close();
+  openBudgetDialog();
+});
+$("#import-legacy-btn").addEventListener("click", importFromLocalStorage);
+$("#import-pasted-btn").addEventListener("click", importFromPastedData);
 $("#open-expense-btn").addEventListener("click", () => openExpenseDialog());
 $("#edit-meals-btn").addEventListener("click", openMealDialog);
 $("#add-first-meal-btn").addEventListener("click", openMealDialog);
