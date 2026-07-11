@@ -529,10 +529,19 @@ function importFromPastedData() {
     const konda = readJsonInput("#konda-import-text", null);
     const expenses = readJsonInput("#expenses-import-text", []);
     const budgets = readJsonInput("#budgets-import-text", {});
+    const pastedValues = [konda, expenses, budgets].filter(Boolean);
 
-    if (konda) localStorage.setItem("kondaNoteAppData", JSON.stringify(konda));
-    if (Array.isArray(expenses)) localStorage.setItem("howMuchLeftExpenses", JSON.stringify(expenses));
-    if (budgets && typeof budgets === "object") localStorage.setItem("howMuchLeftBudgets", JSON.stringify(budgets));
+    const kondaData = konda?.kondaNoteAppData || pastedValues.find((value) => value?.kondaNoteAppData)?.kondaNoteAppData || konda;
+    const expenseData = Array.isArray(expenses)
+      ? expenses
+      : expenses?.howMuchLeftExpenses || pastedValues.find((value) => Array.isArray(value?.howMuchLeftExpenses))?.howMuchLeftExpenses || [];
+    const budgetData = budgets?.howMuchLeftBudgets || pastedValues.find((value) => value?.howMuchLeftBudgets)?.howMuchLeftBudgets || budgets;
+
+    if (kondaData?.weeks) localStorage.setItem("kondaNoteAppData", JSON.stringify(kondaData));
+    if (Array.isArray(expenseData)) localStorage.setItem("howMuchLeftExpenses", JSON.stringify(expenseData));
+    if (budgetData && typeof budgetData === "object" && !Array.isArray(budgetData)) {
+      localStorage.setItem("howMuchLeftBudgets", JSON.stringify(budgetData));
+    }
 
     importFromLocalStorage();
     $("#konda-import-text").value = "";
