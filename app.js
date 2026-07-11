@@ -706,6 +706,8 @@ document.addEventListener("click", (event) => {
   const weekData = currentWeekData();
   const { action, id } = button.dataset;
 
+  if (action === "toggle-shopping") return;
+
   if (action === "open-ingredient") {
     openIngredientDialog(button.dataset.day);
     return;
