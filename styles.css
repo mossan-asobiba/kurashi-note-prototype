@@ -145,7 +145,7 @@ h3 {
 
 .summary-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 
@@ -175,14 +175,16 @@ h3 {
 .metric {
   display: grid;
   gap: 6px;
-  padding: 14px;
+  min-width: 0;
+  padding: 12px;
   border-radius: 12px;
   background: #f8f9fc;
   box-shadow: inset 0 0 0 1px var(--line);
 }
 
 .metric strong {
-  font-size: 1.2rem;
+  font-size: 1.08rem;
+  overflow-wrap: anywhere;
 }
 
 .meter {
@@ -276,7 +278,7 @@ h3 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 4px;
-  margin: 14px 0;
+  margin: 0 0 14px;
   padding: 4px;
   border-radius: 14px;
   background: rgba(47, 51, 55, 0.08);
@@ -662,10 +664,38 @@ h3 {
   background: rgba(47, 51, 55, 0.32);
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(47, 51, 55, 0.32);
+}
+
+.budget-modal {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  z-index: 50;
+  width: min(100%, 520px);
+  max-height: min(720px, calc(100dvh - 16px));
+  overflow: auto;
+  border-radius: 22px 22px 0 0;
+  transform: translateX(-50%);
+  -webkit-overflow-scrolling: touch;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
 .dialog form {
   display: grid;
   gap: 12px;
   padding: 18px;
+}
+
+.dialog.budget-modal form {
+  padding: 22px 18px calc(18px + env(safe-area-inset-bottom));
 }
 
 .dialog label {
@@ -864,6 +894,10 @@ h3 {
 @media (max-width: 380px) {
   #app {
     padding-inline: 12px;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr 1fr;
   }
 
   .inline-form {

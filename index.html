@@ -62,6 +62,13 @@
       </section>
 
       <section id="view-budget" class="view active">
+        <nav class="budget-category-tabs" aria-label="カテゴリ切替">
+          <button class="budget-category-tab active" data-budget-filter="all">全体</button>
+          <button class="budget-category-tab" data-budget-filter="food">食費</button>
+          <button class="budget-category-tab" data-budget-filter="daily">日用品</button>
+          <button class="budget-category-tab" data-budget-filter="other">その他</button>
+        </nav>
+
         <section class="balance-panel">
           <div class="month-row">
             <button id="prev-month-btn" class="icon-btn" aria-label="前の月">‹</button>
@@ -70,7 +77,7 @@
           </div>
 
           <div id="budget-empty" class="empty-callout">
-            <p>今月の予算を入力すると、あといくら使えるか確認できます。</p>
+            <p id="budget-empty-message">今月の予算を入力すると、あといくら使えるか確認できます。</p>
             <button id="start-budget-btn" class="primary-btn">予算を設定</button>
           </div>
 
@@ -80,7 +87,11 @@
               <strong id="remaining-total">¥0</strong>
             </div>
             <div class="metric">
-              <span>使った金額</span>
+              <span>予算</span>
+              <strong id="selected-budget-total">¥0</strong>
+            </div>
+            <div class="metric">
+              <span>使用済み</span>
               <strong id="spent-total">¥0</strong>
             </div>
             <div class="metric">
@@ -97,13 +108,6 @@
         <div class="quick-actions">
           <button id="open-budget-btn" class="secondary-btn">予算を編集</button>
         </div>
-
-        <nav class="budget-category-tabs" aria-label="カテゴリ切替">
-          <button class="budget-category-tab active" data-budget-filter="all">全体</button>
-          <button class="budget-category-tab" data-budget-filter="food">食費</button>
-          <button class="budget-category-tab" data-budget-filter="daily">日用品</button>
-          <button class="budget-category-tab" data-budget-filter="other">その他</button>
-        </nav>
 
         <div class="card budget-pane active" data-budget-pane="home">
           <h2>カテゴリ別</h2>
@@ -163,9 +167,9 @@
     </form>
   </dialog>
 
-  <dialog id="budget-dialog" class="dialog">
-    <form method="dialog" id="budget-form">
-      <h2>今月の予算</h2>
+  <div id="budget-dialog" class="dialog budget-modal hidden" role="dialog" aria-modal="true" aria-labelledby="budget-dialog-title">
+    <form id="budget-form">
+      <h2 id="budget-dialog-title">今月の予算</h2>
       <label>全体予算<input id="budget-all" type="number" inputmode="numeric"></label>
       <label>食費<input id="budget-food" type="number" inputmode="numeric"></label>
       <label>日用品<input id="budget-daily" type="number" inputmode="numeric"></label>
@@ -175,7 +179,7 @@
         <button id="save-budget-btn" value="default" class="primary-btn">保存</button>
       </div>
     </form>
-  </dialog>
+  </div>
 
   <dialog id="expense-dialog" class="dialog expense-sheet">
     <form method="dialog" id="expense-form">

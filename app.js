@@ -17,6 +17,7 @@ let state = loadState();
 let ingredientTargetDay = "";
 let activeBudgetFilter = "all";
 let activeBudgetSection = "home";
+let lockedScrollY = 0;
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -26,8 +27,10 @@ const elements = {
   currentWeekLabel: $("#current-week-label"),
   thisWeekBtn: $("#this-week-btn"),
   budgetEmpty: $("#budget-empty"),
+  budgetEmptyMessage: $("#budget-empty-message"),
   budgetSummary: $("#budget-summary"),
   remainingTotal: $("#remaining-total"),
+  selectedBudgetTotal: $("#selected-budget-total"),
   spentTotal: $("#spent-total"),
   dailyPace: $("#daily-pace"),
   budgetMeter: $("#budget-meter"),
@@ -39,6 +42,7 @@ const elements = {
   shoppingTotal: $("#shopping-total"),
   expenseList: $("#expense-list"),
   toast: $("#toast"),
+  modalBackdrop: $("#modal-backdrop"),
   settingsDialog: $("#settings-dialog"),
   importResult: $("#import-result"),
   budgetDialog: $("#budget-dialog"),
@@ -334,6 +338,23 @@ function totals() {
   };
 }
 
+function selectedBudgetTotals(data, total) {
+  if (activeBudgetFilter === "all") return total;
+
+  const budget = Number(data.budgets[activeBudgetFilter]) || 0;
+  const spent = total.spentByCategory[activeBudgetFilter] || 0;
+  const remaining = Math.max(0, budget - spent);
+
+  return {
+    ...total,
+    budget,
+    spent,
+    remaining,
+    daily: total.daysLeft > 0 ? Math.floor(remaining / total.daysLeft) : 0,
+    ratio: budget > 0 ? spent / budget : 0
+  };
+}
+
 function render() {
   const data = currentData();
   const weekData = currentWeekData();
@@ -343,19 +364,26 @@ function render() {
   elements.currentWeekLabel.textContent = weekLabel();
   elements.thisWeekBtn.classList.toggle("hidden", weekKey() === weekKey(new Date()));
 
-  const hasBudget = total.budget > 0;
+  const selectedTotal = selectedBudgetTotals(data, total);
+  const selectedLabel = activeBudgetFilter === "all" ? "全体" : categories[activeBudgetFilter].label;
+  const hasBudget = selectedTotal.budget > 0;
+  elements.budgetEmptyMessage.textContent =
+    activeBudgetFilter === "all"
+      ? "今月の予算を入力すると、あといくら使えるか確認できます。"
+      : `${selectedLabel}の予算を入力すると、あといくら使えるか確認できます。`;
   elements.budgetEmpty.classList.toggle("hidden", hasBudget);
   elements.budgetSummary.classList.toggle("hidden", !hasBudget);
 
   if (hasBudget) {
-    elements.remainingTotal.textContent = yen.format(total.remaining);
-    elements.spentTotal.textContent = yen.format(total.spent);
-    elements.dailyPace.textContent = yen.format(total.daily);
-    elements.budgetMeter.style.width = `${Math.min(100, total.ratio * 100)}%`;
-    elements.budgetMeter.style.background = total.ratio >= 0.9 ? "var(--red)" : total.ratio >= 0.7 ? "var(--yellow)" : "var(--mint)";
+    elements.remainingTotal.textContent = yen.format(selectedTotal.remaining);
+    elements.selectedBudgetTotal.textContent = yen.format(selectedTotal.budget);
+    elements.spentTotal.textContent = yen.format(selectedTotal.spent);
+    elements.dailyPace.textContent = yen.format(selectedTotal.daily);
+    elements.budgetMeter.style.width = `${Math.min(100, selectedTotal.ratio * 100)}%`;
+    elements.budgetMeter.style.background = selectedTotal.ratio >= 0.9 ? "var(--red)" : selectedTotal.ratio >= 0.7 ? "var(--yellow)" : "var(--mint)";
     elements.paceMessage.textContent =
-      total.daysLeft > 0
-        ? `月末まで残り${total.daysLeft}日。今日から1日${yen.format(total.daily)}くらいで過ごせます。`
+      selectedTotal.daysLeft > 0
+        ? `${selectedLabel}は月末まで残り${selectedTotal.daysLeft}日。今日から1日${yen.format(selectedTotal.daily)}くらいで過ごせます。`
         : "この月は終了しています。履歴の振り返りに使えます。";
   }
 
@@ -484,7 +512,16 @@ function openBudgetDialog() {
   $("#budget-food").value = data.budgets.food || "";
   $("#budget-daily").value = data.budgets.daily || "";
   $("#budget-other").value = data.budgets.other || "";
-  elements.budgetDialog.showModal();
+  lockPageScroll();
+  elements.modalBackdrop.classList.remove("hidden");
+  elements.budgetDialog.classList.remove("hidden");
+}
+
+function closeBudgetDialog() {
+  blurActiveElement();
+  elements.budgetDialog.classList.add("hidden");
+  elements.modalBackdrop.classList.add("hidden");
+  unlockPageScroll();
 }
 
 function openSettingsDialog() {
@@ -621,6 +658,36 @@ function blurActiveElement() {
   }
 }
 
+function lockPageScroll() {
+  lockedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+  document.body.classList.add("modal-open");
+  document.body.style.position = "fixed";
+  document.body.style.top = `-${lockedScrollY}px`;
+  document.body.style.left = "0";
+  document.body.style.right = "0";
+  document.body.style.width = "100%";
+}
+
+function unlockPageScroll() {
+  document.body.classList.remove("modal-open");
+  document.body.style.position = "";
+  document.body.style.top = "";
+  document.body.style.left = "";
+  document.body.style.right = "";
+  document.body.style.width = "";
+  window.scrollTo(0, lockedScrollY);
+}
+
+function closeDialogById(dialogId) {
+  blurActiveElement();
+  if (dialogId === "budget-dialog") {
+    closeBudgetDialog();
+    return;
+  }
+
+  document.getElementById(dialogId)?.close();
+}
+
 function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, (char) => ({
     "&": "&amp;",
@@ -711,8 +778,7 @@ $("#budget-form").addEventListener("submit", (event) => {
     data.budgets.all = data.budgets.food + data.budgets.daily + data.budgets.other;
   }
   saveState();
-  blurActiveElement();
-  elements.budgetDialog.close();
+  closeBudgetDialog();
   render();
   showToast("予算を保存しました");
 });
@@ -755,8 +821,7 @@ $("#shopping-form").addEventListener("submit", (event) => {
 document.addEventListener("click", (event) => {
   const closeButton = event.target.closest("[data-close-dialog]");
   if (closeButton) {
-    blurActiveElement();
-    document.getElementById(closeButton.dataset.closeDialog).close();
+    closeDialogById(closeButton.dataset.closeDialog);
     return;
   }
 
@@ -795,6 +860,14 @@ document.addEventListener("change", (event) => {
   currentWeekData().shopping.sort((a, b) => Number(a.done) - Number(b.done));
   saveState();
   render();
+});
+
+elements.modalBackdrop.addEventListener("click", closeBudgetDialog);
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !elements.budgetDialog.classList.contains("hidden")) {
+    closeBudgetDialog();
+  }
 });
 
 ["gesturestart", "gesturechange", "gestureend"].forEach((eventName) => {
