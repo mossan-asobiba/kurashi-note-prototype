@@ -15,6 +15,8 @@ const yen = new Intl.NumberFormat("ja-JP", {
 
 let state = loadState();
 let ingredientTargetDay = "";
+let activeBudgetFilter = "all";
+let activeBudgetSection = "home";
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -364,7 +366,11 @@ function render() {
 }
 
 function renderCategories(data, total) {
-  elements.categoryList.innerHTML = Object.entries(categories).map(([key, category]) => {
+  const entries = activeBudgetFilter === "all"
+    ? Object.entries(categories)
+    : Object.entries(categories).filter(([key]) => key === activeBudgetFilter);
+
+  elements.categoryList.innerHTML = entries.map(([key, category]) => {
     const budget = data.budgets[key] || 0;
     const spent = total.spentByCategory[key] || 0;
     const ratio = budget > 0 ? spent / budget : 0;
@@ -378,6 +384,24 @@ function renderCategories(data, total) {
       </div>
     `;
   }).join("");
+}
+
+function setBudgetSection(section) {
+  activeBudgetSection = section === "history" ? "history" : "home";
+  $$("[data-budget-pane]").forEach((pane) => {
+    pane.classList.toggle("active", pane.dataset.budgetPane === activeBudgetSection);
+  });
+  $$("[data-budget-section]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.budgetSection === activeBudgetSection);
+  });
+}
+
+function setBudgetFilter(filter) {
+  activeBudgetFilter = categories[filter] ? filter : "all";
+  $$("[data-budget-filter]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.budgetFilter === activeBudgetFilter);
+  });
+  render();
 }
 
 function renderMeals(data) {
@@ -471,8 +495,18 @@ function openSettingsDialog() {
 function openExpenseDialog(category = "food", amount = "") {
   $("#expense-amount").value = amount;
   $("#expense-category").value = category;
+  setExpenseCategory(category);
   $("#expense-date").value = todayISO();
   elements.expenseDialog.showModal();
+  setTimeout(() => $("#expense-amount").focus(), 0);
+}
+
+function setExpenseCategory(category) {
+  const nextCategory = categories[category] ? category : "food";
+  $("#expense-category").value = nextCategory;
+  $$("[data-expense-category]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.expenseCategory === nextCategory);
+  });
 }
 
 function openMealDialog() {
@@ -643,6 +677,21 @@ $$(".tab").forEach((tab) => {
   });
 });
 
+$$("[data-budget-filter]").forEach((button) => {
+  button.addEventListener("click", () => {
+    setBudgetFilter(button.dataset.budgetFilter);
+    setBudgetSection("home");
+  });
+});
+
+$$("[data-budget-section]").forEach((button) => {
+  button.addEventListener("click", () => setBudgetSection(button.dataset.budgetSection));
+});
+
+$$("[data-expense-category]").forEach((button) => {
+  button.addEventListener("click", () => setExpenseCategory(button.dataset.expenseCategory));
+});
+
 $("#budget-form").addEventListener("submit", (event) => {
   event.preventDefault();
   const data = currentData();
@@ -738,3 +787,4 @@ document.addEventListener("change", (event) => {
 });
 
 render();
+setBudgetSection(activeBudgetSection);
