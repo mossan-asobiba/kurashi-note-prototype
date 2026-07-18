@@ -508,10 +508,10 @@ function renderExpenses(data) {
 
 function openBudgetDialog() {
   const data = currentData();
-  $("#budget-all").value = data.budgets.all || "";
-  $("#budget-food").value = data.budgets.food || "";
-  $("#budget-daily").value = data.budgets.daily || "";
-  $("#budget-other").value = data.budgets.other || "";
+  $("#budget-all").value = formatInputAmount(data.budgets.all);
+  $("#budget-food").value = formatInputAmount(data.budgets.food);
+  $("#budget-daily").value = formatInputAmount(data.budgets.daily);
+  $("#budget-other").value = formatInputAmount(data.budgets.other);
   lockPageScroll();
   elements.modalBackdrop.classList.remove("hidden");
   elements.budgetDialog.classList.remove("hidden");
@@ -658,6 +658,27 @@ function blurActiveElement() {
   }
 }
 
+function parseInputAmount(value) {
+  return Number(String(value).replace(/[^\d]/g, "")) || 0;
+}
+
+function formatInputAmount(value) {
+  const amount = parseInputAmount(value);
+  return amount ? amount.toLocaleString("ja-JP") : "";
+}
+
+function formatBudgetInput(input) {
+  const nextValue = formatInputAmount(input.value);
+  input.value = nextValue;
+}
+
+function updateBudgetTotalFromCategories() {
+  const total = ["#budget-food", "#budget-daily", "#budget-other"]
+    .map((selector) => parseInputAmount($(selector).value))
+    .reduce((sum, amount) => sum + amount, 0);
+  $("#budget-all").value = total ? total.toLocaleString("ja-JP") : "";
+}
+
 function lockPageScroll() {
   lockedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
   document.body.classList.add("modal-open");
@@ -765,14 +786,21 @@ $$("[data-expense-category]").forEach((button) => {
   button.addEventListener("click", () => setExpenseCategory(button.dataset.expenseCategory));
 });
 
+["#budget-all", "#budget-food", "#budget-daily", "#budget-other"].forEach((selector) => {
+  $(selector).addEventListener("input", (event) => {
+    formatBudgetInput(event.target);
+    if (selector !== "#budget-all") updateBudgetTotalFromCategories();
+  });
+});
+
 $("#budget-form").addEventListener("submit", (event) => {
   event.preventDefault();
   const data = currentData();
   data.budgets = {
-    all: Number($("#budget-all").value) || 0,
-    food: Number($("#budget-food").value) || 0,
-    daily: Number($("#budget-daily").value) || 0,
-    other: Number($("#budget-other").value) || 0
+    all: parseInputAmount($("#budget-all").value),
+    food: parseInputAmount($("#budget-food").value),
+    daily: parseInputAmount($("#budget-daily").value),
+    other: parseInputAmount($("#budget-other").value)
   };
   if (!data.budgets.all) {
     data.budgets.all = data.budgets.food + data.budgets.daily + data.budgets.other;
