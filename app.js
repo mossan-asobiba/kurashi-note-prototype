@@ -615,6 +615,12 @@ function showToast(message) {
   setTimeout(() => elements.toast.classList.remove("show"), 2000);
 }
 
+function blurActiveElement() {
+  if (document.activeElement && typeof document.activeElement.blur === "function") {
+    document.activeElement.blur();
+  }
+}
+
 function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, (char) => ({
     "&": "&amp;",
@@ -705,6 +711,7 @@ $("#budget-form").addEventListener("submit", (event) => {
     data.budgets.all = data.budgets.food + data.budgets.daily + data.budgets.other;
   }
   saveState();
+  blurActiveElement();
   elements.budgetDialog.close();
   render();
   showToast("予算を保存しました");
@@ -713,6 +720,7 @@ $("#budget-form").addEventListener("submit", (event) => {
 $("#expense-form").addEventListener("submit", (event) => {
   event.preventDefault();
   addExpense($("#expense-amount").value, $("#expense-category").value, $("#expense-date").value);
+  blurActiveElement();
   elements.expenseDialog.close();
   showToast("支出を保存しました");
 });
@@ -725,6 +733,7 @@ $("#meal-form").addEventListener("submit", (event) => {
   });
   currentWeekData().meals = meals;
   saveState();
+  blurActiveElement();
   elements.mealDialog.close();
   render();
   showToast("献立を保存しました");
@@ -733,6 +742,7 @@ $("#meal-form").addEventListener("submit", (event) => {
 $("#ingredient-form").addEventListener("submit", (event) => {
   event.preventDefault();
   addShoppingItem(elements.ingredientName.value, ingredientTargetDay);
+  blurActiveElement();
   elements.ingredientDialog.close();
 });
 
@@ -745,6 +755,7 @@ $("#shopping-form").addEventListener("submit", (event) => {
 document.addEventListener("click", (event) => {
   const closeButton = event.target.closest("[data-close-dialog]");
   if (closeButton) {
+    blurActiveElement();
     document.getElementById(closeButton.dataset.closeDialog).close();
     return;
   }
@@ -784,6 +795,10 @@ document.addEventListener("change", (event) => {
   currentWeekData().shopping.sort((a, b) => Number(a.done) - Number(b.done));
   saveState();
   render();
+});
+
+["gesturestart", "gesturechange", "gestureend"].forEach((eventName) => {
+  document.addEventListener(eventName, (event) => event.preventDefault(), { passive: false });
 });
 
 render();
