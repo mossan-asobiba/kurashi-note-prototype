@@ -879,6 +879,16 @@ body.modal-open {
   overflow-wrap: anywhere;
 }
 
+.meal-row-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.clear-meal-btn {
+  min-width: 44px;
+}
+
+.clear-meal-btn,
 .random-meal-btn {
   min-height: 44px;
   padding: 4px 8px;
@@ -886,11 +896,13 @@ body.modal-open {
   font-size: 0.875rem;
 }
 
+.clear-meal-btn[aria-disabled="true"],
 .random-meal-btn[aria-disabled="true"] {
   opacity: 0.5;
   cursor: default;
 }
 
+.clear-meal-btn[aria-disabled="false"]:active,
 .random-meal-btn[aria-disabled="false"]:active {
   background: var(--green);
 }

@@ -549,9 +549,9 @@ function setExpenseCategory(category) {
 function openMealDialog() {
   const data = currentWeekData();
   const currentWeek = weekKey(new Date());
-  const isThisWeek = weekKey() === currentWeek;
-  const hasHistory = isThisWeek && pastMeals(currentWeek).length > 0;
-  $("#random-meal-tools").classList.toggle("hidden", !isThisWeek);
+  const canFillRandomMeals = weekKey() >= currentWeek;
+  const hasHistory = canFillRandomMeals && pastMeals(currentWeek).length > 0;
+  $("#random-meal-tools").classList.toggle("hidden", !canFillRandomMeals);
   $("#fill-empty-meals-btn").disabled = !hasHistory;
   $("#random-meal-status").textContent = hasHistory
     ? "空欄に過去の献立をランダムで入力します。"
@@ -560,10 +560,13 @@ function openMealDialog() {
     <div class="bulk-day-row">
       <label class="bulk-day-label" for="meal-${day}">${day}<span class="visually-hidden">曜日</span></label>
       <input id="meal-${day}" type="text" data-meal-input="${day}" value="${escapeAttr(data.meals[day] || "")}" placeholder="例：カレー、ハンバーグ">
-      ${isThisWeek ? `<button type="button" class="secondary-btn random-meal-btn" data-random-day="${day}" aria-label="${day}曜日のおまかせ入力" ${hasHistory ? "" : "disabled"}>おまかせ</button>` : ""}
+      <div class="meal-row-actions">
+        <button type="button" class="secondary-btn clear-meal-btn" data-clear-day="${day}" aria-label="${day}曜日の献立を消す">消す</button>
+        ${canFillRandomMeals ? `<button type="button" class="secondary-btn random-meal-btn" data-random-day="${day}" aria-label="${day}曜日のおまかせ入力" ${hasHistory ? "" : "disabled"}>おまかせ</button>` : ""}
+      </div>
     </div>
   `).join("");
-  updateRandomMealButtons();
+  updateMealButtons();
   elements.mealDialog.showModal();
 }
 
@@ -578,7 +581,12 @@ function pastMeals(currentWeek) {
   return [...meals];
 }
 
-function updateRandomMealButtons() {
+function updateMealButtons() {
+  for (const button of $$("[data-clear-day]")) {
+    const input = document.getElementById(`meal-${button.dataset.clearDay}`);
+    button.setAttribute("aria-disabled", String(!input.value));
+  }
+
   const buttons = $$("[data-random-day]");
   if (!buttons.length) return;
   let hasEmptyDay = false;
@@ -593,7 +601,7 @@ function updateRandomMealButtons() {
 
 function fillRandomMeals(day) {
   const currentWeek = weekKey(new Date());
-  if (weekKey() !== currentWeek) return;
+  if (weekKey() < currentWeek) return;
 
   const inputs = $$("[data-meal-input]");
   const emptyInputs = inputs.filter((input) => !input.value.trim() && (!day || input.dataset.mealInput === day));
@@ -609,7 +617,7 @@ function fillRandomMeals(day) {
     input.value = meal;
   }
 
-  updateRandomMealButtons();
+  updateMealButtons();
   $("#random-meal-status").textContent = day
     ? `${day}曜日に「${emptyInputs[0].value}」を入力しました。`
     : `${emptyInputs.length}日分の献立を入力しました。`;
@@ -794,8 +802,22 @@ $("#open-expense-btn").addEventListener("click", () => openExpenseDialog());
 $("#edit-meals-btn").addEventListener("click", openMealDialog);
 $("#add-first-meal-btn").addEventListener("click", openMealDialog);
 $("#fill-empty-meals-btn").addEventListener("click", () => fillRandomMeals());
-elements.mealInputs.addEventListener("input", updateRandomMealButtons);
+elements.mealInputs.addEventListener("input", updateMealButtons);
 elements.mealInputs.addEventListener("click", (event) => {
+  const clearButton = event.target.closest("[data-clear-day]");
+  if (clearButton) {
+    const day = clearButton.dataset.clearDay;
+    const input = document.getElementById(`meal-${day}`);
+    if (!input.value) return;
+
+    input.value = "";
+    updateMealButtons();
+    if (!$("#fill-empty-meals-btn").disabled) {
+      $("#random-meal-status").textContent = `${day}曜日の献立を消しました。`;
+    }
+    return;
+  }
+
   const button = event.target.closest("[data-random-day]");
   if (button) fillRandomMeals(button.dataset.randomDay);
 });
