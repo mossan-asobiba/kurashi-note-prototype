@@ -214,6 +214,10 @@
   <dialog id="meal-dialog" class="dialog wide-dialog">
     <form method="dialog" id="meal-form">
       <h2>献立の入力</h2>
+      <div id="random-meal-tools" class="random-meal-tools hidden">
+        <button type="button" id="fill-empty-meals-btn" class="secondary-btn random-meal-btn">空欄をまとめて埋める</button>
+        <p id="random-meal-status" role="status"></p>
+      </div>
       <div id="meal-inputs" class="meal-inputs"></div>
       <div class="dialog-actions">
         <button type="button" class="secondary-btn" data-close-dialog="meal-dialog">キャンセル</button>
