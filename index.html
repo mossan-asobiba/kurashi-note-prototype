@@ -226,13 +226,14 @@
     </form>
   </dialog>
 
-  <dialog id="ingredient-dialog" class="dialog">
+  <dialog id="ingredient-dialog" class="dialog" aria-labelledby="ingredient-title">
     <form method="dialog" id="ingredient-form">
-      <h2>買う食材を追加</h2>
+      <h2 id="ingredient-title">買う食材を追加</h2>
       <p id="ingredient-meal-name" class="dialog-note"></p>
-      <label>食材名<input id="ingredient-name" type="text" placeholder="例：たまご、牛乳"></label>
+      <label>食材名<input id="ingredient-name" type="text" placeholder="例：たまご" autofocus></label>
+      <p id="ingredient-status" role="status"></p>
       <div class="dialog-actions">
-        <button type="button" class="secondary-btn" data-close-dialog="ingredient-dialog">キャンセル</button>
+        <button type="button" class="secondary-btn" data-close-dialog="ingredient-dialog">閉じる</button>
         <button id="save-ingredient-btn" value="default" class="primary-btn">追加</button>
       </div>
     </form>

@@ -51,6 +51,7 @@ const elements = {
   mealInputs: $("#meal-inputs"),
   ingredientDialog: $("#ingredient-dialog"),
   ingredientMealName: $("#ingredient-meal-name"),
+  ingredientStatus: $("#ingredient-status"),
   ingredientName: $("#ingredient-name")
 };
 
@@ -628,21 +629,23 @@ function openIngredientDialog(day) {
   ingredientTargetDay = day;
   elements.ingredientMealName.textContent = `${day}曜：${meal}`;
   elements.ingredientName.value = "";
+  elements.ingredientStatus.textContent = "食材は1品ずつ追加してください。";
   elements.ingredientDialog.showModal();
-  setTimeout(() => elements.ingredientName.focus(), 0);
 }
 
 function addShoppingItem(name, day = "") {
-  if (!name.trim()) return;
-  currentWeekData().shopping.push({
+  const trimmedName = name.trim();
+  if (!trimmedName) return false;
+  const weekData = currentWeekData();
+  weekData.shopping.push({
     id: createId("shopping"),
-    name: name.trim(),
+    name: trimmedName,
     day,
     done: false
   });
   saveState();
-  render();
-  showToast("買い物リストに追加しました");
+  renderShopping(weekData);
+  return true;
 }
 
 function addExpense(amount, category, date, memo = "") {
@@ -921,14 +924,31 @@ $("#meal-form").addEventListener("submit", (event) => {
 
 $("#ingredient-form").addEventListener("submit", (event) => {
   event.preventDefault();
-  addShoppingItem(elements.ingredientName.value, ingredientTargetDay);
-  blurActiveElement();
-  elements.ingredientDialog.close();
+  const name = elements.ingredientName.value.trim();
+  if (addShoppingItem(name, ingredientTargetDay)) {
+    elements.ingredientStatus.textContent = `「${name}」を追加しました。`;
+    elements.ingredientName.value = "";
+    if (window.matchMedia("(prefers-reduced-motion: no-preference)").matches) {
+      $("#save-ingredient-btn").animate?.(
+        [
+          { transform: "scale(0.95)", backgroundColor: "var(--blue)" },
+          { transform: "scale(1.1)", backgroundColor: "var(--blue)", offset: 0.4 },
+          { transform: "scale(1)", backgroundColor: "var(--pink)" }
+        ],
+        { duration: 360, easing: "ease-out" }
+      );
+    }
+  } else {
+    elements.ingredientStatus.textContent = "食材名を入力してください。";
+  }
+  elements.ingredientName.focus();
 });
 
 $("#shopping-form").addEventListener("submit", (event) => {
   event.preventDefault();
-  addShoppingItem($("#shopping-name").value);
+  if (addShoppingItem($("#shopping-name").value)) {
+    showToast("買い物リストに追加しました");
+  }
   $("#shopping-name").value = "";
 });
 

@@ -871,7 +871,8 @@ body.modal-open {
   gap: 8px;
 }
 
-#random-meal-status {
+#random-meal-status,
+#ingredient-status {
   margin: 0;
   color: var(--ink);
   font-size: 0.875rem;
